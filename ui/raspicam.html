@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <link href="../siteicon.png" rel="apple-touch-icon" type="image/png"/>
+    <meta content="m2ag.labs.ui.cam" name="apple-mobile-web-app-title">
+    <link href="../siteicon.png" rel="shortcut icon" type="image/png"/>
+    <link href="../siteicon.png" rel="mask-icon" type=""/>
+    <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
+    <link href="../css/vendor/bootstrap.min.css" rel="stylesheet">
+    <title>m2ag.labs.raspicam</title>
+</head>
+<body>
+
+<div class="container-fluid">
+
+    <!--ui page -->
+    <div id="ui" aria-labelledby="pills-ui-tab" class="tab-pane fade show" role="tabpanel">
+        <div class="row vw-100">
+            <div class="col-md-12 text-center">
+                <div id="display" class="text-center">
+                    <img id="display_image" alt="not connected" src="../siteicon.png"
+                         style="width:90%">
+                </div>
+            </div>
+        </div><!-- row -->
+    </div>
+</div> <!-- container main content-->
+
+<script src="js/nipplejs.js"></script>
+<script src="../js/comm.js"></script>
+
+<script>
+
+    const opts = {}
+    const thing_url = `${window.location.protocol}//${window.location.hostname}:8888`
+    const getOptions = {
+        method: 'GET',
+        headers: {'Content-Type': 'application/json'},
+        redirect: 'follow'
+    };
+
+
+    const params = {};
+    const cmd_stub = {
+        "messageType": "setProperty",
+        "data": {}
+    };
+    let raspi_cam_socket;
+
+    const scale = (num, in_min, in_max, out_min, out_max) => {
+        return (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+    };
+
+
+    const init = () => {
+
+        //?index=<index>&{ poll : interval} / { socket : true }&jwt=<token>
+        //TODO: jwt with webthing
+        let param = window.location.search.substring(1, window.location.search.length);
+        param = param.split('&')
+        for (const i in param) {
+            const ix = param[i].split('=')
+            opts[ix[0]] = ix[1]
+        }
+
+        if (opts['jwt'] !== undefined && opts['jwt'] !== '') {
+            getOptions.headers['Authorization'] = `Bearer ${opts['jwt']}`
+            //get the defaults from the thing and setup fields
+            fetch(`${thing_url}/${opts.index}`, getOptions)
+                .then(response => response.json())
+                .then(result => setThing(result))
+                .catch(error => console.log('error', error))
+        } else {
+            alert('missing auth token') // gotta have a token
+        }
+    }
+
+    const setThing = (thing) => {
+        raspi_cam_socket = getWebSocket(`/${opts.index}`, {on_message: raspi_cam_message}, opts['jwt'])
+        fetch(`${thing_url}/${opts.index}/properties`, getOptions)
+            .then(response => response.json())
+            .then(result => setRaspiCam(result))
+            .catch(error => console.log('error', error))
+
+        setDefaults(thing['properties'])
+
+    }
+
+    //updates from the websocket -- do I really need this?
+    const raspi_cam_message = (evt) => {
+        //TODO: update last position here.
+        //console.log(evt.data);
+    }
+
+    const setDefaults = (data) => {
+        //console.log(data);
+        for (const param in data) {
+            if (data.hasOwnProperty(param)) {
+                params[param] = data[param];
+            }
+        }
+    }
+
+    const setRaspiCam = (init) => {
+        document.getElementById("display_image").src = window.location.origin + ':5000/video'
+        setTimeout(() => {
+            cameraPositionInit(init);
+        }, 1000);
+    }
+    /**
+     * Camera Pan/Tilt
+     **/
+
+    const camera = nipplejs.create({
+        zone: document.getElementById('display'),
+        mode: 'dynamic',
+        color: 'red',
+        size: 200
+    });
+
+    const cameraPanTiltCmd = {
+        "pan": 150,
+        "tilt": 150
+    };
+    const current_move = {pan: 0, tilt: 0};
+    let camera_move_interval;
+    const joystick_center = 5;
+
+    const cameraPositionInit = (data) => {
+
+        document.getElementById("display").ondblclick = centerCamera;
+
+        if (data.pan > params.pan.maximum || data.pan < params.pan.minimum) {
+            cameraPanTiltCmd.pan = params.pan.init;
+        } else {
+            cameraPanTiltCmd.pan = data.pan;
+        }
+
+        if (data.tilt > params.tilt.maximum || data.tilt < params.tilt.minimum) {
+            cameraPanTiltCmd.tilt = params.tilt.init;
+        } else {
+            cameraPanTiltCmd.tilt = data.tilt;
+        }
+        cmd_stub.data = cameraPanTiltCmd;
+        wssSend(cmd_stub, raspi_cam_socket);
+
+
+        camera.on('start', () => {
+            camera_move_interval = setInterval(() => {
+                moveCamera(current_move.tilt, current_move.pan);
+            }, 250);
+        }).on('end', function () {
+            clearInterval(camera_move_interval);
+            camera.options.lockX = false;
+            camera.options.lockY = false;
+        }).on('move', function (evt, data) {
+            current_move.pan = -data.instance.frontPosition.x;
+            current_move.tilt = data.instance.frontPosition.y;
+            //Allows joystick to change direction in when it is in center
+            if (Math.abs(current_move.tilt) < joystick_center && Math.abs(current_move.pan) < joystick_center) {
+                camera.options.lockX = false;
+                camera.options.lockY = false;
+            }
+        }).on('dir:up dir:down', function () {
+            if (!(camera.options.lockX || camera.options.lockY)) {
+                camera.options.lockY = true;
+            }
+        }).on('dir:left dir:right', function () {
+            if (!(camera.options.lockX || camera.options.lockY)) {
+                camera.options.lockX = true;
+            }
+        });
+    }
+
+    const moveCamera = (tilt, pan) => {
+        //Get the latest position from the last data_object
+        let _pan = cameraPanTiltCmd.pan;
+        let _tilt = cameraPanTiltCmd.tilt;
+        _pan += scale(Math.floor(pan), 0, 100, 0, 5);
+        if (_pan < params.pan['minimum']) _pan = params.pan['minimum'];
+        if (_pan > params.pan['maximum']) _pan = params.pan['maximum'];
+        _tilt += scale(Math.floor(tilt), 0, 100, 0, 5);
+        if (_tilt < params.tilt['minimum']) _tilt = params.tilt['minimum'];
+        if (_tilt > params.tilt['maximum']) _tilt = params.tilt['maximum'];
+
+        cameraPanTiltCmd.pan = Math.floor(_pan);
+        cameraPanTiltCmd.tilt = Math.floor(_tilt);
+        cmd_stub.data = cameraPanTiltCmd;
+        wssSend(cmd_stub, raspi_cam_socket);
+    }
+
+    const centerCamera = () => {
+        //TODO: Get the zeros for pan and tilt from the config.
+        //cameraPanTiltCmd.pan = params.pan.init;
+        cameraPanTiltCmd.pan = 150;
+        //cameraPanTiltCmd.tilt = params.tilt.init;
+        cameraPanTiltCmd.tilt = 150;
+        cmd_stub.data = cameraPanTiltCmd;
+        wssSend(cmd_stub, raspi_cam_socket);
+    }
+
+    window.addEventListener("load", init);
+
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+

@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <link href="siteicon.png" rel="apple-touch-icon" type="image/png"/>
+    <meta content="m2ag.labs thing client" name="apple-mobile-web-app-title">
+    <link href="siteicon.png" rel="shortcut icon" type="image/png"/>
+    <link href="siteicon.png" rel="mask-icon" type=""/>
+    <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/jstree/style.css" rel="stylesheet"/>
+    <title>m2ag.labs.thing.builder</title>
+    <style>
+        iframe {
+            position: relative;
+            height: 750px;
+            width: 100%;
+            border: 0;
+        }
+
+        #service_frame, #thing_frame, #helper_frame {
+            overflow: hidden;
+        }
+
+        .navbar {
+            padding-bottom: 0;
+            padding-top: 0;
+            height: 4%;
+        }
+
+        .control-menu {
+            margin-right: 25px;
+        }
+
+        #device_tree_area {
+            overflow: auto;
+            height: 100%;
+        }
+        main {
+            padding-top: 0;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-sm navbar-light bg-light mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand">m2ag.labs.thing.builder</a>
+        <button aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation"
+                class="navbar-toggler"
+                data-bs-target="#navbarCollapse" data-bs-toggle="collapse" type="button">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav me-auto mb-2 mb-md-0">
+            </ul>
+            <div class="d-flex control-menu">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    <li class="nav-item dropdown">
+                        <a aria-expanded="false" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#"
+                           role="button">
+                            utilities
+                        </a>
+                        <ul aria-labelledby="navbarDropdown" class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="configManager('clear-login')">logout</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="#" onclick="jwtModal(true)">jwt</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown control-menu">
+                        <a aria-expanded="false" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#"
+                           id="navbarDropdown" role="button">
+                            help
+                        </a>
+                        <ul aria-labelledby="navbarDropdown" class="dropdown-menu">
+                            <li><a class="dropdown-item" target="_blank" href="https://github.com/m2ag-labs/m2ag-thing-builder/wiki/thing-builder">wiki</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" target="_blank" href="https://github.com/m2ag-labs/m2ag-thing-client/issues">client bugs</a></li>
+                            <li><a class="dropdown-item" target="_blank" href="https://github.com/m2ag-labs/m2ag-thing-builder/issues">thing bugs</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+<!-- container main content-->
+<main class="container-fluid">
+    <div class="row vw-100">
+        <!-- jstree card -->
+        <div class="col-md-3">
+            <div id="device_tree_area"></div>
+        </div>
+        <!-- detail card -->
+        <div class="col-md-9 px-0 py-0">
+            <div class="card">
+                <div class="card-body" id="tree-detail-card">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-pills" id="thing-tab-ul" role="tablist">
+                        <li class="nav-item ui_pill all_pills" role="presentation">
+                            <button aria-controls="ui" aria-selected="false" class="nav-link"
+                                    data-bs-target="#ui"
+                                    data-bs-toggle="tab" id="ui-tab" onclick="tabClickHandler('ui-tab')" role="tab"
+                                    type="button">ui
+                            </button>
+                        </li>
+                        <li class="nav-item service_pill all_pills" role="presentation">
+                            <button aria-controls="service" aria-selected="false" class="nav-link active"
+                                    data-bs-target="#service"
+                                    data-bs-toggle="tab" id="service-tab" onclick="tabClickHandler('service-tab')"
+                                    role="tab" type="button">
+                                service
+                            </button>
+                        </li>
+                        <li class="nav-item thing_pill all_pills" role="presentation">
+                            <button aria-controls="thing" aria-selected="false" class="nav-link"
+                                    data-bs-target="#thing"
+                                    data-bs-toggle="tab" id="thing-tab" onclick="tabClickHandler('thing-tab')"
+                                    role="tab" type="button">thing
+                            </button>
+                        </li>
+                        <li class="nav-item helper_pill all_pills" role="presentation">
+                            <button aria-controls="helper" aria-selected="false" class="nav-link"
+                                    data-bs-target="#helper"
+                                    data-bs-toggle="tab" id="helper-tab" onclick="tabClickHandler('helper-tab')"
+                                    role="tab"
+                                    type="button">helper
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div aria-labelledby="ui-tab" class="tab-pane" id="ui" role="tabpanel">
+                            <iframe id="ui_frame" src="" title="ui"></iframe>
+                        </div>
+                        <div aria-labelledby="service-tab" class="tab-pane active" id="service" role="tabpanel">
+                            <iframe id="service_frame" scrolling="no" src="" title="service"></iframe>
+                        </div>
+                        <div aria-labelledby="thing-tab" class="tab-pane" id="thing" role="tabpanel">
+                            <iframe id="thing_frame" scrolling="no" src="" title="thing"></iframe>
+                        </div>
+                        <div aria-labelledby="helper-tab" class="tab-pane" id="helper" role="tabpanel">
+                            <iframe id="helper_frame" scrolling="no" src="" title="helper"></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- jwt modal -->
+            <div class="modal" id="jwt_modal" role="dialog" tabindex="-1">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">jwt info</h5>
+                            <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                        </div>
+                        <div class="modal-body">
+                            <ul class="list-group text-left">
+                                <li class="list-group-item list-group-item-primary  text-center">
+                                    thing url
+                                </li>
+                                <li class="list-group-item  text-center">
+                                    <span id="thing_url"></span>
+                                </li>
+                                <li class="list-group-item  list-group-item-primary text-center">
+                                    jwt
+                                </li>
+                                <li class="list-group-item  text-center" style="overflow-wrap: break-word;">
+                                    <span id="jwt_token"></span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<nav class="navbar fixed-bottom navbar-light bg-light">
+    <div class="container-fluid">
+        <a class="navbar-light" target="_blank" a href="https://m2aglabs.com">© 2021 m2ag.labs</a>
+        <p class="navbar-light" href="#">beta 1.0 </p>
+    </div>
+</nav>
+<!-- Popper.js, then Bootstrap JS -->
+<script src="js/vendor/popper.min.js"></script>
+<script src="js/vendor/bootstrap.min.js"></script>
+<!-- need jquery.min -- slim will not work -- needed for jstree and bootstrap tables-->
+<script src="js/vendor/jquery.min.js"></script>
+<script src="js/vendor/jstree.min.js"></script>
+<script src="js/tree.js"></script><!-- tree and ui actions  -->
+<script>
+    //TODO: move to path -- need to convert back end to tornado app.
+    const api_url = `${window.location.protocol}//${window.location.hostname}:8443`
+    const thing_url = `${window.location.protocol}//${window.location.hostname}:8888`
+    const requestHeaders = new Headers();
+    requestHeaders.append("Content-Type", "application/json");
+    const getOptions = {
+        method: 'GET',
+        headers: requestHeaders,
+        redirect: 'follow'
+    }
+    const putOptions = {
+        method: 'PUT',
+        headers: requestHeaders,
+        redirect: 'follow',
+        body: ''
+    }
+    const version_info = 'beta 1, 2021'
+    let config = {hash: '', token: '', opts: ''}
+
+    const configManager = (mode = 'load') => {
+        switch (mode) {
+            case 'load':
+                //TODO: load other config options
+                config = localStorage.getItem('client_config');
+                try {
+                    config = JSON.parse(config);
+                    if (config === null) config = {}
+                } catch (e) {
+                    config = {}
+                }
+                if ('hash' in config && config.hash !== '') {
+                    requestHeaders.append("Authorization", 'Basic ' + decodeURIComponent(config.hash));
+                    if (config.token === undefined) config.token = ''
+                    return true;
+                } else {
+                    return true
+                    window.location.replace('ui/signin.html')
+                }
+                break;
+            case 'save':
+                localStorage.setItem('client_config', JSON.stringify(config))
+                break
+            case 'save-password':
+                //TODO: save editor states -- this just does passwords now
+                config.hash = encodeURIComponent(btoa(document.getElementById('connect_name').value + ":" + document.getElementById('connect_password').value))
+                requestHeaders.set("Authorization", 'Basic ' + decodeURIComponent(config.hash))
+                localStorage.setItem('client_config', JSON.stringify(config));
+                return true
+                break;
+            case 'clear-login':
+                config.hash = ''
+                config.token = ''
+                localStorage.setItem('client_config', JSON.stringify(config));
+                window.location.replace('ui/signin.html')
+                return true
+                break;
+            default:
+                console.log("unknown local storage operation");
+                break;
+        }
+        return false;
+    }
+
+    const jwtModal = () => {
+        const modal = new bootstrap.Modal(document.getElementById('jwt_modal'))
+        fetch(`${api_url}/auth`, getOptions)
+            .then(response => response.json())
+            .then(result => {
+                document.getElementById('thing_url').innerText = thing_url
+                document.getElementById('jwt_token').innerText = result.data.token
+            })
+            .catch(error => console.log('error', error))
+        modal.show()
+    }
+
+
+    const init = () => {
+        if (configManager('load')) { //sets dataOptions dataHeader too
+            if (config.token === '') {
+                fetch(`${api_url}/auth`, getOptions)
+                    .then(response => response.json())
+                    .then(result => {
+                        config.token = encodeURIComponent(result.data['token'])
+                        configManager('save')
+                    })
+                    .catch(error => alert(error))
+            }
+            document.title = window.location.hostname
+            treeInit() // jshint ignore:line
+        }
+    }
+    window.addEventListener("load", init)
+
+</script>
+
+</body>
+</html>
