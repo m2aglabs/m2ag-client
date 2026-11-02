@@ -50,7 +50,7 @@
         }
 
         tr {
-            alignment: center;
+            /*alignment: center;*/
             text-align: center;
         }
 
@@ -106,7 +106,7 @@
 
 <script>
     const api_url = `${window.location.protocol}//${window.location.hostname}:8443`
-    const m2agapi_url = `https://storage.googleapis.com/m2ag-webthings`
+    const m2agapi_url = `${api_url}/things`
     const requestHeaders = new Headers();
     requestHeaders.append("Content-Type", "application/json");
     const gcHeaders = new Headers()
